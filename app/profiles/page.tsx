@@ -2,13 +2,14 @@ import { Separator } from "@/components/ui/separator";
 import { TypographyH2 } from "@/components/ui/typography";
 import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
-import AddSpeciesDialog from "./add-species-dialog";
-import SpeciesCard from "./species-card";
+import ProfileCard from "./profile-card";
 
+interface ProfileCardProps {
+  profile: Profile;
+  sessionUserId: string;
+}
 
-
-export default async function SpeciesList() {
-  // Create supabase server component client and obtain user session from stored cookie
+export default async function ProfilesPage() {
   const supabase = createServerSupabaseClient();
   const {
     data: { session },
@@ -19,21 +20,26 @@ export default async function SpeciesList() {
     redirect("/");
   }
 
-  // Obtain the ID of the currently signed-in user
-  const sessionUserId = session.user.id;
-  console.log("Session UserID:", sessionUserId);
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("display_name", { ascending: false });
 
-  const { data: species } = await supabase.from("species").select("*").order("id", { ascending: false });
+  if (error) {
+    console.error("Error fetching profiles:", error);
+    return <div>Error loading profiles</div>;
+  }
 
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <TypographyH2>Species List</TypographyH2>
-        <AddSpeciesDialog userId={sessionUserId} />
+        <TypographyH2>Profiles</TypographyH2>
       </div>
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
-        {species?.map((species) => <SpeciesCard key={species.id} species={species} sessionUserId={sessionUserId} />)}
+        {profiles?.map((profile) => (
+          <ProfileCard key={profile.id} profile={profile} />
+        ))}
       </div>
     </>
   );
