@@ -14,6 +14,7 @@ import EditSpeciesDialog from "./edit-species-dialog";
 import DeleteSpeciesDialog from "./delete-species";
 import CommentsDialog from "./comments";
 
+
 type Species = Database["public"]["Tables"]["species"]["Row"];
 
 interface SpeciesCardProps {
@@ -21,23 +22,29 @@ interface SpeciesCardProps {
   sessionUserId: string;
 }
 
-export default function SpeciesCard({ species, sessionUserId }: SpeciesCardProps) {
-  const [isPopupOpen, setPopupOpen] = useState(false);
-  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+export default function SpeciesCard({
+  species,
+  sessionUserId,
+}: SpeciesCardProps): JSX.Element {
+  const [isPopupOpen, setPopupOpen] = useState<boolean>(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 
-  const openPopup = () => setPopupOpen(true);
-  const closePopup = () => setPopupOpen(false);
+  const openPopup = (): void => setPopupOpen(true);
+  const closePopup = (): void => setPopupOpen(false);
 
-  const openEditDialog = () => setEditDialogOpen(true);
-  const closeEditDialog = () => setEditDialogOpen(false);
+  const openEditDialog = (): void => setEditDialogOpen(true);
+  const closeEditDialog = (): void => setEditDialogOpen(false);
 
-  const openDeleteDialog = () => setDeleteDialogOpen(true);
-  const closeDeleteDialog = () => setDeleteDialogOpen(false);
+  const openDeleteDialog = (): void => setDeleteDialogOpen(true);
+  const closeDeleteDialog = (): void => setDeleteDialogOpen(false);
+
+  const handleDialogOpenChange = (openState: boolean): void => {
+    setPopupOpen(openState);
+  };
 
   return (
-    // Added "relative" and extra bottom padding ("pb-12") for proper absolute positioning.
-    <div className="relative m-4 w-72 min-w-72 flex-none rounded border-2 p-3 shadow pb-12">
+    <div className="m-4 w-72 min-w-72 flex-none rounded border-2 p-3 shadow">
       {species.image && (
         <div className="relative h-40 w-full">
           <Image
@@ -48,42 +55,49 @@ export default function SpeciesCard({ species, sessionUserId }: SpeciesCardProps
           />
         </div>
       )}
-      <h4 className="text-lg font-light italic">{species.common_name}</h4>
-      <p>{species.description ? species.description.slice(0, 150).trim() + "..." : ""}</p>
+      <h4 className="text-lg font-light italic">{species.scientific_name}</h4>
+      <p className="text-sm text-muted-foreground">{species.common_name}</p>
+      <p>
+        {species.description
+          ? species.description.slice(0, 150).trim() + "..."
+          : ""}
+      </p>
       <Button className="mt-3 w-full" onClick={openPopup}>
         Learn More
       </Button>
       {isPopupOpen && (
-        <Dialog open={isPopupOpen} onOpenChange={setPopupOpen}>
+        <Dialog
+          open={isPopupOpen}
+          onOpenChange={handleDialogOpenChange}
+        >
           <DialogContent>
             <DialogTitle>{species.scientific_name}</DialogTitle>
             <p>Kingdom: {species.kingdom}</p>
             <p>Common Name: {species.common_name}</p>
-            <p>Total Population: {species.total_population}</p>
+            <p>Total Population: {species.total_population?.toLocaleString()}</p>
             <p>{species.description}</p>
             <Button onClick={closePopup}>Close</Button>
           </DialogContent>
         </Dialog>
       )}
-      {/* Position the CommentsDialog at the bottom-right of the card */}
-      <div className="position">
+      <div className="mt-2 flex justify-end">
         <CommentsDialog speciesId={species.id} sessionUserId={sessionUserId} />
       </div>
       {species.author === sessionUserId && (
-        <>
-          <Button onClick={openEditDialog} className="mt-3 w-full">
+        <div className="mt-3 flex flex-col gap-2">
+          <Button onClick={openEditDialog} variant="outline">
             Edit Info
           </Button>
           {isEditDialogOpen && (
             <EditSpeciesDialog species={species} onClose={closeEditDialog} />
           )}
-          <Button onClick={openDeleteDialog} className="mt-3 w-full">
+          <Button onClick={openDeleteDialog} variant="destructive">
             Delete Species
           </Button>
           {isDeleteDialogOpen && (
             <DeleteSpeciesDialog species={species} onClose={closeDeleteDialog} />
           )}
-        </>
+        </div>
       )}
     </div>
   );

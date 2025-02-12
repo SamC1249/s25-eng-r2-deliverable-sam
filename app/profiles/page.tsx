@@ -3,11 +3,9 @@ import { TypographyH2 } from "@/components/ui/typography";
 import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
 import ProfileCard from "./profile-card";
+import type { Database } from "@/lib/schema";
 
-interface ProfileCardProps {
-  profile: Profile;
-  sessionUserId: string;
-}
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export default async function ProfilesPage() {
   const supabase = createServerSupabaseClient();
@@ -38,7 +36,11 @@ export default async function ProfilesPage() {
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
         {profiles?.map((profile) => (
-          <ProfileCard key={profile.id} profile={profile} />
+          <ProfileCard
+            key={profile.id}
+            profile={profile}
+            sessionUserId={session.user.id} // Pass the session user ID to ProfileCard
+          />
         ))}
       </div>
     </>

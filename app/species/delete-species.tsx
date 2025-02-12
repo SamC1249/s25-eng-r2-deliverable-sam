@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
-import { default as DeleteSpeciesDialog } from "./delete-species";
 
 interface Species {
   id: number;
@@ -26,12 +25,15 @@ interface DeleteSpeciesDialogProps {
   onClose: () => void;
 }
 
-export default function DeleteSpeciesDialog({ species, onClose }: DeleteSpeciesDialogProps) {
+export default function DeleteSpeciesDialog({
+  species,
+  onClose,
+}: DeleteSpeciesDialogProps): JSX.Element {
   const router = useRouter();
   const [open, setOpen] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     setLoading(true);
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
@@ -57,16 +59,26 @@ export default function DeleteSpeciesDialog({ species, onClose }: DeleteSpeciesD
     }
   };
 
+  const handleOpenChange = (openState: boolean): void => {
+    setOpen(openState);
+    if (!openState) {
+      onClose();
+    }
+  };
+
+  const handleCancelClick = (): void => {
+    setOpen(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(openState) => {
-      setOpen(openState);
-      if (!openState) onClose();
-    }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Delete Species</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{species.scientific_name}</strong>? This action cannot be undone.
+            Are you sure you want to delete{" "}
+            <strong>{species.scientific_name}</strong>? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4 flex gap-2">
@@ -74,10 +86,7 @@ export default function DeleteSpeciesDialog({ species, onClose }: DeleteSpeciesD
             {loading ? "Deleting…" : "Delete"}
           </Button>
           <DialogClose asChild>
-            <Button variant="secondary" onClick={() => {
-              setOpen(false);
-              onClose();
-            }}>
+            <Button variant="secondary" onClick={handleCancelClick}>
               Cancel
             </Button>
           </DialogClose>

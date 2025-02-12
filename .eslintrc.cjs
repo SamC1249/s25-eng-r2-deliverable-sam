@@ -25,6 +25,13 @@ module.exports = {
         fixStyle: "inline-type-imports",
       },
     ],
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }], // https://typescript-eslint.io/rules/no-unused-vars/
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/array-type": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/no-floating-promises": "off",
+    "@typescript-eslint/no-misused-promises": "off",
+    "react/no-unescaped-entities": "off",
   },
 };

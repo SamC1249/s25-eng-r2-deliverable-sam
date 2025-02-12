@@ -36,51 +36,34 @@ import { useRouter } from "next/navigation";
 import { useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import type { Database } from "@/lib/schema";
 
-// Define the kingdoms enum; this is shared with your add component.
-const kingdoms = z.enum(["Animalia", "Plantae", "Fungi", "Protista", "Archaea", "Bacteria"]);
+// Define the kingdom type from the database schema
+type Kingdom = Database["public"]["Enums"]["kingdom"];
 
-// Define a zod schema for species; the same as your add-species version.
+// Define the kingdoms enum with explicit type
+const kingdoms = z.enum([
+  "Animalia",
+  "Plantae", 
+  "Fungi",
+  "Protista",
+  "Archaea",
+  "Bacteria"
+] as const);
+
+// Define the species schema with strict types
 const speciesSchema = z.object({
-  scientific_name: z
-    .string()
-    .trim()
-    .min(1)
-    .transform((val) => val?.trim()),
-  common_name: z
-    .string()
-    .nullable()
-    .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
-  kingdom: kingdoms,
+  scientific_name: z.string().trim().min(1),
+  common_name: z.string().nullable(),
+  kingdom: z.enum(["Animalia", "Plantae", "Fungi", "Protista", "Archaea", "Bacteria"] as const),
   total_population: z.number().int().positive().min(1).nullable(),
-  image: z
-    .string()
-    .url()
-    .nullable()
-    .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
-  description: z
-    .string()
-    .nullable()
-    .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
+  image: z.string().url().nullable(),
+  description: z.string().nullable()
 });
 
-// Infer the form data type
 type FormData = z.infer<typeof speciesSchema>;
+type Species = Database["public"]["Tables"]["species"]["Row"];
 
-// This interface represents a species record.
-// Adjust the fields as needed to match your own database schema.
-interface Species {
-  id: number;
-  scientific_name: string;
-  common_name: string | null;
-  kingdom: string;
-  total_population: number | null;
-  image: string | null;
-  description: string | null;
-  user_id: string;
-}
-
-// Props for the edit dialog include the existing species and an onClose callback.
 interface EditSpeciesDialogProps {
   species: Species;
   onClose: () => void;
@@ -89,30 +72,27 @@ interface EditSpeciesDialogProps {
 export default function EditSpeciesDialog({
   species,
   onClose,
-}: EditSpeciesDialogProps) {
+}: EditSpeciesDialogProps): JSX.Element {
   const router = useRouter();
-  // Open is initially true, because you want the dialog to be visible when editing.
   const [open, setOpen] = useState<boolean>(true);
 
-  // Define default form values from the species record.
-  const defaultValues: Partial<FormData> = {
+  // Define default values with proper type checking
+  const defaultValues: FormData = {
     scientific_name: species.scientific_name,
     common_name: species.common_name,
-    kingdom: species.kingdom as typeof kingdoms._def.values[number],
+    kingdom: species.kingdom,
     total_population: species.total_population,
     image: species.image,
-    description: species.description,
+    description: species.description
   };
 
-  // Set up react-hook-form with Zod validation
   const form = useForm<FormData>({
     resolver: zodResolver(speciesSchema),
     defaultValues,
     mode: "onChange",
   });
 
-  // onSubmit now performs an update query rather than an insert.
-  const onSubmit = async (input: FormData) => {
+  const onSubmit = async (input: FormData): Promise<void> => {
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
       .from("species")
@@ -127,14 +107,14 @@ export default function EditSpeciesDialog({
       .eq("id", species.id);
 
     if (error) {
-      return toast({
+      toast({
         title: "Error updating species",
         description: error.message,
         variant: "destructive",
       });
+      return;
     }
 
-    // Optionally, reset the form. (router.refresh() may clear state as well.)
     form.reset(defaultValues);
     setOpen(false);
     router.refresh();
@@ -145,26 +125,25 @@ export default function EditSpeciesDialog({
     onClose();
   };
 
+  const handleOpenChange = (openState: boolean): void => {
+    setOpen(openState);
+    if (!openState) onClose();
+  };
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(openState) => {
-        setOpen(openState);
-        if (!openState) onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Species</DialogTitle>
           <DialogDescription>
-            Update the details of this species below, then click “Save Changes.”
+            Update the details of this species below, then click "Save Changes."
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
-            onSubmit={(e: BaseSyntheticEvent) =>
-              void form.handleSubmit(onSubmit)(e)
-            }
+            onSubmit={(e: BaseSyntheticEvent): void => {
+              void form.handleSubmit(onSubmit)(e);
+            }}
           >
             <div className="grid w-full items-center gap-4">
               <FormField
@@ -207,7 +186,7 @@ export default function EditSpeciesDialog({
                   <FormItem>
                     <FormLabel>Kingdom</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(value)}
+                      onValueChange={(value) => field.onChange(value as typeof kingdoms._def.values[number])}
                       value={field.value}
                     >
                       <FormControl>

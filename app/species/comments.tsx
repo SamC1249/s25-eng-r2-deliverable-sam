@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,16 +11,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
 import { toast } from "@/components/ui/use-toast";
+import type { Database } from "@/lib/schema";
 
-export default function CommentsDialog({ speciesId, sessionUserId }) {
-  const [comments, setComments] = useState([]); // State to hold fetched comments
-  const [newComment, setNewComment] = useState(""); // State for new comment input
-  const [isCommentsOpen, setCommentsOpen] = useState(false); // State for dialog visibility
+type Comment = Database["public"]["Tables"]["comments"]["Row"];
+
+interface CommentsDialogProps {
+  speciesId: number;      // ID of the species for which comments are being fetched
+  sessionUserId: string;  // ID of the currently logged-in user
+}
+
+export default function CommentsDialog({
+  speciesId,
+  sessionUserId,
+}: CommentsDialogProps): JSX.Element {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState<string>("");
+  const [isCommentsOpen, setCommentsOpen] = useState<boolean>(false);
 
   const supabase = createBrowserSupabaseClient();
 
   // Fetch comments for the species
-  const fetchComments = async () => {
+  const fetchComments = async (): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from("comments")
@@ -29,16 +40,17 @@ export default function CommentsDialog({ speciesId, sessionUserId }) {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-
-      setComments(data || []); // Update state with fetched comments
-    } catch (error) {
-      console.error("Error fetching comments:", error);
+      setComments(data || []);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error("Error fetching comments:", errorMessage);
       toast({ title: "Error fetching comments.", variant: "destructive" });
     }
   };
 
   // Add a new comment
-  const handleAddComment = async () => {
+  const handleAddComment = async (): Promise<void> => {
     if (!newComment.trim()) {
       toast({ title: "Comment cannot be empty.", variant: "destructive" });
       return;
@@ -57,37 +69,43 @@ export default function CommentsDialog({ speciesId, sessionUserId }) {
       if (error) throw error;
 
       toast({ title: "Comment added successfully!" });
-      setNewComment(""); // Clear input field
-      fetchComments(); // Refresh comments after adding
-    } catch (error) {
-      console.error("Error adding comment:", error);
+      setNewComment("");
+      await fetchComments();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error("Error adding comment:", errorMessage);
       toast({ title: "Error adding comment.", variant: "destructive" });
     }
   };
 
   // Delete a comment
-  const handleDeleteComment = async (commentId) => {
+  const handleDeleteComment = async (commentId: number): Promise<void> => {
     try {
       const { error } = await supabase
         .from("comments")
         .delete()
         .eq("id", commentId)
-        .eq("user_id", sessionUserId); // Only allow deletion if the comment belongs to the current user
+        .eq("user_id", sessionUserId);
 
       if (error) throw error;
 
       toast({ title: "Comment deleted successfully!" });
-      fetchComments(); // Refresh comments after deletion
-    } catch (error) {
-      console.error("Error deleting comment:", error);
+      await fetchComments();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error("Error deleting comment:", errorMessage);
       toast({ title: "Error deleting comment.", variant: "destructive" });
     }
   };
 
   // Handle dialog open/close state and fetch comments when opened
-  const handleOpenChange = (open) => {
+  const handleOpenChange = (open: boolean): void => {
     setCommentsOpen(open);
-    if (open) fetchComments();
+    if (open) {
+      fetchComments();
+    }
   };
 
   return (
@@ -110,7 +128,8 @@ export default function CommentsDialog({ speciesId, sessionUserId }) {
                   <li key={comment.id} className="border-b pb-2">
                     <p className="text-sm text-gray-200">{comment.comment}</p>
                     {comment.user_id === sessionUserId && (
-                      <Button className="w-10 h-6 fs-6 p-4 pr-6 pl-6"
+                      <Button
+                        className="w-10 h-6 fs-6 p-4 pr-6 pl-6"
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDeleteComment(comment.id)}
@@ -122,18 +141,20 @@ export default function CommentsDialog({ speciesId, sessionUserId }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-400">No comments yet. Be the first to comment!</p>
+              <p className="text-sm text-gray-400">
+                No comments yet. Be the first to comment!
+              </p>
             )}
           </div>
-          {/* Input for adding a new comment */}
           <Input
             value={newComment}
             placeholder="Write a comment..."
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewComment(e.target.value)
+            }
             className="mb-2"
           />
           <Button onClick={handleAddComment}>Add Comment</Button>
-          {/* Close Button */}
           <Button
             variant="secondary"
             className="mt-4"
