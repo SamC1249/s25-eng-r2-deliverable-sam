@@ -80,9 +80,6 @@ export default function SpeciesCard({
           </DialogContent>
         </Dialog>
       )}
-      <div className="mt-2 flex justify-end">
-        <CommentsDialog speciesId={species.id} sessionUserId={sessionUserId} />
-      </div>
       {species.author === sessionUserId && (
         <div className="mt-3 flex flex-col gap-2">
           <Button onClick={openEditDialog} variant="outline">
@@ -99,6 +96,9 @@ export default function SpeciesCard({
           )}
         </div>
       )}
+      <div className="mt-3 flex justify-end">
+        <CommentsDialog speciesId={species.id} sessionUserId={sessionUserId} />
+      </div>
     </div>
   );
 }

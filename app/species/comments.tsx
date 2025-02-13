@@ -109,7 +109,7 @@ export default function CommentsDialog({
   };
 
   return (
-    <div className="absolute bottom-3 right-3">
+    <div >
       <Dialog open={isCommentsOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button

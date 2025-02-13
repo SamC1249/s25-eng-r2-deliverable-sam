@@ -131,7 +131,7 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
       if (!firstResult) {
         toast({ title: "No search results found.", variant: "destructive" });
         return;
-}
+      }
 
       const pageTitle = firstResult.title;
 
@@ -165,17 +165,17 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
       }
 
       const page = pages[pageKeys[0] as any];
-if (!page) {
-  toast({
-    title: "Error fetching data",
-    description: "No page data available for the provided search term.",
-    variant: "destructive",
-  });
-  return;
-}
+      if (!page) {
+        toast({
+          title: "Error fetching data",
+          description: "No page data available for the provided search term.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-const description = page.extract || "";
-const imageUrl = page.thumbnail ? page.thumbnail.source : "";
+      const description = page.extract || "";
+      const imageUrl = page.thumbnail ? page.thumbnail.source : "";
 
       // Autofill the form fields for description and image
       form.setValue("description", description);
@@ -233,9 +233,173 @@ const imageUrl = page.thumbnail ? page.thumbnail.source : "";
           Add Species
         </Button>
       </DialogTrigger>
+      <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Add New Species</DialogTitle>
+          <DialogDescription>
+            Fill in the details below to add a new species to the database.
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Remaining JSX content remains unchanged */}
-      
+        <div className="mb-4">
+          <Input
+            placeholder="Search Wikipedia..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="mb-2"
+          />
+          <Button onClick={handleSearch} variant="secondary" className="w-full">
+            Search Wikipedia
+          </Button>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
+            <div className="grid w-full items-center gap-4">
+              <FormField
+                control={form.control}
+                name="scientific_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scientific Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Scientific Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="common_name"
+                render={({ field }) => {
+                  const { value, ...rest } = field;
+                  return (
+                    <FormItem>
+                      <FormLabel>Common Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={value ?? ""}
+                          placeholder="Common Name"
+                          {...rest}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <FormField
+                control={form.control}
+                name="kingdom"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kingdom</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a kingdom" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectGroup>
+                          {kingdoms.options.map((kingdom) => (
+                            <SelectItem key={kingdom} value={kingdom}>
+                              {kingdom}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="total_population"
+                render={({ field }) => {
+                  const { value, ...rest } = field;
+                  return (
+                    <FormItem>
+                      <FormLabel>Total Population</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          value={value ?? ""}
+                          placeholder="Total Population"
+                          {...rest}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => {
+                  const { value, ...rest } = field;
+                  return (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={value ?? ""}
+                          placeholder="Image URL"
+                          {...rest}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => {
+                  const { value, ...rest } = field;
+                  return (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          value={value ?? ""}
+                          placeholder="Description"
+                          {...rest}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1">
+                  Add Species
+                </Button>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary" className="flex-1">
+                    Cancel
+                  </Button>
+                </DialogClose>
+              </div>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
     </Dialog>
   );
 }
